@@ -4,7 +4,7 @@ import argparse
 
 
 DEFAULT_PARSER = {
-    'task': {
+    'cluster': {
         'args': ['-c', '--cluster'],
         'kwargs': {
             'action': 'store',
