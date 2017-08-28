@@ -34,15 +34,19 @@ def base_cluster(config):
 
     if config.cluster == "kmeans":
         kmeans = KmeansCluster(vec_data)
+        kmeans.predict()
         write_cluster_result(config.target+".kmeans", kmeans.data, kmeans.kmeans.labels_)
     elif config.cluster == "dbscan":
         dbscan = DbscanCluster(vec_data)
+        dbscan.predict()
         write_cluster_result(config.target+".dbscan", dbscan.data, dbscan.dbscan.labels_)
     elif config.cluster == "AP":
         ap = APCluster(vec_data)
+        ap.predict()
         write_cluster_result(config.target+".ap", ap.data, ap.AP.labels_)
     elif config.cluster == "Birch":
         birch = BirchCluster(vec_data)
+        birch.predict()
         write_cluster_result(config.target, birch.data, birch.birch.labels_)
 
 

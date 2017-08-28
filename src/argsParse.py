@@ -31,6 +31,15 @@ DEFAULT_PARSER = {
             'help': 'the target field to clustering and filter'
         }
     },
+    'target': {
+        'args': ['-t', '--target'],
+        'kwargs': {
+            'action': 'store',
+            'dest': 'target',
+            'required': True,
+            'help': 'output file path',
+        }
+    },
     'number': {
         'args': ['-n', '--number'],
         'kwargs': {
@@ -39,15 +48,6 @@ DEFAULT_PARSER = {
             'type': int,
             'required': False,
             'help': 'the number of sample',
-        }
-    },
-    'target': {
-        'args': ['-t', '--target'],
-        'kwargs': {
-            'action': 'store',
-            'dest': 'target',
-            'required': True,
-            'help': 'output file path',
         }
     },
 }
