@@ -1,6 +1,7 @@
 # coding = utf-8
 
 import logging
+from datetime import timedelta
 from datetime import datetime
 
 import numpy as np
@@ -27,26 +28,42 @@ def base_cluster(config):
         value = PATTERN_TIME.sub("", value)
         value = PATTERN_NUMBER.sub("", value)
         pre_process_date.append(value)
-
+    logging.info("load the cluster data")
     top_words = sentence_words_count(pre_process_date, cut=True, top_n=20)
-
+    logging.info("get the top n words")
     vec_data = [get_base_feature_vec(sentence, top_words) for sentence in attribute_values]
 
     if config.cluster == "kmeans":
         kmeans = KmeansCluster(vec_data)
+        logging.info("start the kmeans cluster")
         kmeans.predict()
+        logging.info("finish the kmeans cluster, use time %s" % timedelta.total_seconds(datetime.now() - start_time))
+        silhouette_score, calinski_harabaz_score = kmeans.get_estimate_result()
+        logging.info("the cluster estimate is %s and %s" % (silhouette_score, calinski_harabaz_score))
         write_cluster_result(config.target+".kmeans", origin_data, kmeans.labels_, order="label")
     elif config.cluster == "dbscan":
         dbscan = DbscanCluster(vec_data)
+        logging.info("start the dbscan cluster")
         dbscan.predict()
+        logging.info("finish the dbscan cluster, use time %s" % timedelta.total_seconds(datetime.now() - start_time))
+        silhouette_score, calinski_harabaz_score = dbscan.get_estimate_result()
+        logging.info("the cluster estimate is %s and %s" % (silhouette_score, calinski_harabaz_score))
         write_cluster_result(config.target+".dbscan", origin_data, dbscan.labels_)
     elif config.cluster == "AP":
         ap = APCluster(vec_data)
+        logging.info("start the ap cluster")
         ap.predict()
+        logging.info("finish the ap cluster, use time %s" % timedelta.total_seconds(datetime.now() - start_time))
+        silhouette_score, calinski_harabaz_score = ap.get_estimate_result()
+        logging.info("the cluster estimate is %s and %s" % (silhouette_score, calinski_harabaz_score))
         write_cluster_result(config.target+".ap", origin_data, ap.labels_)
     elif config.cluster == "Birch":
         birch = BirchCluster(vec_data)
+        logging.info("start the birch cluster")
         birch.predict()
+        logging.info("finish the birch cluster, use time %s" % timedelta.total_seconds(datetime.now() - start_time))
+        silhouette_score, calinski_harabaz_score = birch.get_estimate_result()
+        logging.info("the cluster estimate is %s and %s" % (silhouette_score, calinski_harabaz_score))
         write_cluster_result(config.target, origin_data, birch.labels_)
 
 
@@ -103,7 +120,7 @@ class KmeansCluster:
             k = self.get_best_cluster_num_elbow()
         else:
             k = self.get_best_cluster_num_silhouette()
-
+        logging.info("the best cluster of kmeans is %s" % k)
         X = np.array(self.data)
 
         self.kmeans = cluster.KMeans(n_clusters=k, random_state=0, n_jobs=5).fit(X)
@@ -140,6 +157,7 @@ class DbscanCluster:
         X = np.array(self.data)
 
         self.dbscan = cluster.DBSCAN(eps=eps, min_samples=min_samples).fit(X)
+        self.labels_ = [num.item() for num in self.dbscan.labels_]
         return self.dbscan
 
     def get_estimate_result(self):
@@ -171,6 +189,7 @@ class APCluster:
         X = np.array(self.data)
 
         self.AP = cluster.AffinityPropagation(damping=damping, preference=preference)
+        self.labels_ = [num.item() for num in self.AP.labels_]
         return self.AP
 
     def get_estimate_result(self):
@@ -203,6 +222,7 @@ class BirchCluster:
         if not branching_factor:
             branching_factor = self.length / 20
         self.birch = cluster.Birch(threshold=threshold, branching_factor=branching_factor, n_clusters=None).fit(X)
+        self.labels_ = [num.item() for num in self.birch.labels_]
         return self.birch
 
     def get_estimate_result(self):
