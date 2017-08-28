@@ -1,19 +1,21 @@
 # coding = utf-8
 
 import time
+import logging
 from datetime import datetime
-import ioUtils
+from ioUtils import *
 from features import *
 import numpy as np
-from numpy import random
 from sklearn import cluster
+from sklearn import metrics
+from scipy.spatial.distance import cdist
 
 
 def base_cluster(config):
 
     # load the date
-    origin_data = ioUtils.readfile2list(config.source)
-    attribute_values = ioUtils.get_json_att(origin_data, config.filed)
+    origin_data = readfile2list(config.source)
+    attribute_values = get_json_att(origin_data, config.filed)
 
     start_time = datetime.now()
 
@@ -30,23 +32,179 @@ def base_cluster(config):
     vec_data = [get_base_feature_vec(sentence, top_words) for sentence in attribute_values]
 
     if config.cluster == "kmeans":
-        pass
+        kmeans = KmeansCluster(vec_data)
+        write_cluster_result(config.target+".kmeans", kmeans.data, kmeans.kmeans.labels_)
     elif config.cluster == "dbscan":
-        pass
+        dbscan = DbscanCluster(vec_data)
+        write_cluster_result(config.target+".dbscan", dbscan.data, dbscan.dbscan.labels_)
     elif config.cluster == "AP":
-        pass
+        ap = APCluster(vec_data)
+        write_cluster_result(config.target+".ap", ap.data, ap.AP.labels_)
     elif config.cluster == "Birch":
-        pass
+        birch = BirchCluster(vec_data)
+        write_cluster_result(config.target, birch.data, birch.birch.labels_)
 
 
-def kmeans_cluster(vector_list):
-    input_data = np.array(vector_list)
+class KmeansCluster:
+
+    def __init__(self, data, sample_rate=0.3):
+        self.data = data
+        self.length = len(data)
+        self.sample_rate = sample_rate
+        self.sample_num = int(self.length * sample_rate)
+        self._get_random_sample()
 
 
-def dbscan_cluster(vector_list):
+    def _get_random_sample(self):
+        rand_index = np.random.choice(self.length, self.sample_num, replace=False)
+        rand_index = list(rand_index)
+        rand_index.sort()
+        self.sample_data = [self.data[value] for value in rand_index]
+
+    def get_best_cluster_num_elbow(self):
+        X = np.array(self.sample_data)
+
+        kmeans = cluster.KMeans(n_clusters=1, random_state=0).fit(X)
+        mean_distortion = sum(np.min()(cdist(X, kmeans.cluster_centers_, 'euclidean'), axis=1)) / X.shape[0]
+        for k in xrange(2, 20):
+            kmeans = cluster.KMeans(n_clusters=k, random_state=0).fit(X)
+            cur_mean_distortion = sum(np.min()(cdist(X, kmeans.cluster_centers_, 'euclidean'), axis=1)) / X.shape[0]
+            logging.info("%s clusters meandistortion is %s" % (k, cur_mean_distortion))
+            if (mean_distortion - cur_mean_distortion) / mean_distortion < 0.1:
+                k -= 1
+                break
+            mean_distortion = cur_mean_distortion
+
+        return k
+
+    def get_best_cluster_num_silhouette(self):
+        X = np.array(self.sample_data)
+
+        kmeans = cluster.KMeans(n_clusters=1, random_state=0, n_jobs=5).fit(X)
+        silhouette_score = metrics.silhouette_score(X, kmeans.labels_,metric='euclidean')
+        for k in xrange(2, 20):
+            kmeans = cluster.KMeans(n_clusters=k, random_state=0, n_jobs=5).fit(X)
+            cur_silhouette_score = metrics.silhouette_score(X, kmeans.labels_,metric='euclidean')
+            logging.info("%s clusters meandistortion is %s" % (k, cur_silhouette_score))
+            if (silhouette_score - cur_silhouette_score) / silhouette_score < 0.1:
+                k -= 1
+                break
+            silhouette_score = cur_silhouette_score
+
+        return k
+
+    def predict(self, find_best="elbow"):
+        if find_best == "elbow":
+            k = self.get_best_cluster_num_elbow()
+        else:
+            k = self.get_best_cluster_num_silhouette()
+
+        X = np.array(self.data)
+
+        self.kmeans = cluster.KMeans(n_clusters=k, random_state=0, n_jobs=5).fit(X)
+        return self.kmeans
+
+    def get_estimate_result(self):
+        if not self.kmeans:
+            print "the kmeans model is not exist, please training first."
+            return
+
+        silhouette_score = metrics.silhouette_score(np.array(self.data), self.kmeans.labels_)
+        calinski_harabaz_score = metrics.calinski_harabaz_score(np.array(self.data), self.kmeans.labels_)
+        
+        return silhouette_score, calinski_harabaz_score
 
 
-def affinity_propagation_cluster(vector_list):
+class DbscanCluster:
+    def __init__(self, data, sample_rate=0.3):
+        self.data = data
+        self.length = len(data)
+        self.sample_rate = sample_rate
+        self.sample_num = int(self.length * sample_rate)
+        self._get_random_sample()
 
 
-def brich_cluster(vector_list):
+    def _get_random_sample(self):
+        rand_index = np.random.choice(self.length, self.sample_num, replace=False)
+        rand_index = list(rand_index)
+        rand_index.sort()
+        self.sample_data = [self.data[value] for value in rand_index]
+
+    def predict(self, eps=0.3, min_samples=10):
+        X = np.array(self.data)
+
+        self.dbscan = cluster.DBSCAN(eps=eps, min_samples=min_samples).fit(X)
+        return self.dbscan
+
+    def get_estimate_result(self):
+        if not self.dbscan:
+            print "the dbscan model is not exist, please training first."
+            return
+
+        silhouette_score = metrics.silhouette_score(np.array(self.data), self.dbscan.labels_)
+        calinski_harabaz_score = metrics.calinski_harabaz_score(np.array(self.data), self.dbscan.labels_)
+
+        return silhouette_score, calinski_harabaz_score
+
+
+class APCluster:
+    def __init__(self, data, sample_rate=0.3):
+        self.data = data
+        self.length = len(data)
+        self.sample_rate = sample_rate
+        self.sample_num = int(self.length * sample_rate)
+        self._get_random_sample()
+
+    def _get_random_sample(self):
+        rand_index = np.random.choice(self.length, self.sample_num, replace=False)
+        rand_index = list(rand_index)
+        rand_index.sort()
+        self.sample_data = [self.data[value] for value in rand_index]
+
+    def predict(self, damping=0.3, preference=None):
+        X = np.array(self.data)
+
+        self.AP = cluster.AffinityPropagation(damping=damping, preference=preference)
+        return self.AP
+
+    def get_estimate_result(self):
+        if not self.AP:
+            print "the AP model is not exist, please training first."
+            return
+
+        silhouette_score = metrics.silhouette_score(np.array(self.data), self.AP.labels_)
+        calinski_harabaz_score = metrics.calinski_harabaz_score(np.array(self.data), self.AP.labels_)
+
+        return silhouette_score, calinski_harabaz_score
+
+
+class BirchCluster:
+    def __init__(self, data, sample_rate=0.3):
+        self.data = data
+        self.length = len(data)
+        self.sample_rate = sample_rate
+        self.sample_num = int(self.length * sample_rate)
+        self._get_random_sample()
+
+    def _get_random_sample(self):
+        rand_index = np.random.choice(self.length, self.sample_num, replace=False)
+        rand_index = list(rand_index)
+        rand_index.sort()
+        self.sample_data = [self.data[value] for value in rand_index]
+
+    def predict(self, threshold=0.3, branching_factor=None):
+        X = np.array(self.data)
+        if not branching_factor:
+            branching_factor = self.length / 20
+        self.birch = cluster.Birch(threshold=threshold, branching_factor=branching_factor, n_clusters=None).fit(X)
+        return self.birch
+
+    def get_estimate_result(self):
+        if not self.birch:
+            print "the birch model is not exist, please training first."
+            return
+
+        silhouette_score = metrics.silhouette_score(np.array(self.data), self.birch.labels_)
+        calinski_harabaz_score = metrics.calinski_harabaz_score(np.array(self.data), self.birch.labels_)
+
+        return silhouette_score, calinski_harabaz_score

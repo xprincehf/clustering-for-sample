@@ -37,30 +37,19 @@ DEFAULT_PARSER = {
             'action': 'store',
             'dest': 'number',
             'type': int,
-            'required': True,
+            'required': False,
             'help': 'the number of sample',
         }
     },
-    'pattern': {
-        'args': ['-p', '--pattern'],
+    'target': {
+        'args': ['-t', '--target'],
         'kwargs': {
             'action': 'store',
-            'dest': 'pattern',
-            'required': False,
-            'help': 'regular pattern',
-            'default': None,
+            'dest': 'target',
+            'required': True,
+            'help': 'output file path',
         }
     },
-    'mode': {
-        'args': ['-m', '--mode'],
-        'kwargs': {
-            'action': 'store',
-            'dest': 'mode',
-            'required': False,
-            'help': 'exclude or include',
-            'default': None,
-        }
-    }
 }
 
 
