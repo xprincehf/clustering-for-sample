@@ -45,11 +45,11 @@ def writelist2file(filepath, content, encoding='utf-8'):
 def writejson2file(filepath, json_content, encoding='utf-8'):
     with codecs.open(filepath, 'w', encoding=encoding) as wf:
         for item in json_content:
-            if isinstance(item, list):
+            if isinstance(item, list) or isinstance(item, tuple):
                 item = [json.dumps(x, ensure_ascii=False) for x in item]
                 item = "\t".join(item)
             else:
-                item = json.dump(item, ensure_ascii=False)
+                item = json.dumps(item, ensure_ascii=False)
             wf.write(item)
             wf.write("\n")
 

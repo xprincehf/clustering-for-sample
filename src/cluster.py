@@ -35,20 +35,19 @@ def base_cluster(config):
     if config.cluster == "kmeans":
         kmeans = KmeansCluster(vec_data)
         kmeans.predict()
-        print kmeans.kmeans.labels_
-        write_cluster_result(config.target+".kmeans", origin_data, kmeans.kmeans.labels_)
+        write_cluster_result(config.target+".kmeans", origin_data, kmeans.labels_, order="label")
     elif config.cluster == "dbscan":
         dbscan = DbscanCluster(vec_data)
         dbscan.predict()
-        write_cluster_result(config.target+".dbscan", origin_data, dbscan.dbscan.labels_)
+        write_cluster_result(config.target+".dbscan", origin_data, dbscan.labels_)
     elif config.cluster == "AP":
         ap = APCluster(vec_data)
         ap.predict()
-        write_cluster_result(config.target+".ap", origin_data, ap.AP.labels_)
+        write_cluster_result(config.target+".ap", origin_data, ap.labels_)
     elif config.cluster == "Birch":
         birch = BirchCluster(vec_data)
         birch.predict()
-        write_cluster_result(config.target, origin_data, birch.birch.labels_)
+        write_cluster_result(config.target, origin_data, birch.labels_)
 
 
 class KmeansCluster:
@@ -108,6 +107,7 @@ class KmeansCluster:
         X = np.array(self.data)
 
         self.kmeans = cluster.KMeans(n_clusters=k, random_state=0, n_jobs=5).fit(X)
+        self.labels_ = [num.item() for num in self.kmeans.labels_]
         return self.kmeans
 
     def get_estimate_result(self):
