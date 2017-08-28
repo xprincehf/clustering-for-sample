@@ -16,7 +16,7 @@ def base_cluster(config):
 
     # load the date
     origin_data = readfile2list(config.source)
-    attribute_values = get_json_att(origin_data, config.filed)
+    attribute_values = get_json_att(origin_data, config.field)
 
     start_time = datetime.now()
 
@@ -35,6 +35,7 @@ def base_cluster(config):
     if config.cluster == "kmeans":
         kmeans = KmeansCluster(vec_data)
         kmeans.predict()
+        print kmeans.kmeans.labels_
         write_cluster_result(config.target+".kmeans", kmeans.data, kmeans.kmeans.labels_)
     elif config.cluster == "dbscan":
         dbscan = DbscanCluster(vec_data)
@@ -70,10 +71,10 @@ class KmeansCluster:
         X = np.array(self.sample_data)
 
         kmeans = cluster.KMeans(n_clusters=1, random_state=0).fit(X)
-        mean_distortion = sum(np.min()(cdist(X, kmeans.cluster_centers_, 'euclidean'), axis=1)) / X.shape[0]
+        mean_distortion = sum(np.min(cdist(X, kmeans.cluster_centers_, 'euclidean'), axis=1)) / X.shape[0]
         for k in xrange(2, 20):
             kmeans = cluster.KMeans(n_clusters=k, random_state=0).fit(X)
-            cur_mean_distortion = sum(np.min()(cdist(X, kmeans.cluster_centers_, 'euclidean'), axis=1)) / X.shape[0]
+            cur_mean_distortion = sum(np.min(cdist(X, kmeans.cluster_centers_, 'euclidean'), axis=1)) / X.shape[0]
             logging.info("%s clusters meandistortion is %s" % (k, cur_mean_distortion))
             if (mean_distortion - cur_mean_distortion) / mean_distortion < 0.1:
                 k -= 1

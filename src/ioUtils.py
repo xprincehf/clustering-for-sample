@@ -6,7 +6,7 @@ import os
 
 
 def readfile2list(filepath, encoding="utf-8"):
-    with codecs.open(filepath, encoding=encoding) as rf:
+    with codecs.open(filepath, 'r', encoding=encoding) as rf:
         return rf.readlines()
 
 
@@ -28,12 +28,13 @@ def get_json_att(content, attribute):
         json_dict = json.loads(content)
         return json_dict.get(attribute, None)
     elif isinstance(content, list):
-        dict_list = [json.loads(string, attribute)for string in content]
-        return [content for content in dict_list if content is not None]
+        dict_list = [json.loads(string, attribute) for string in content]
+        att_list = [json_dict.get(attribute, None) for json_dict in dict_list]
+        return [content for content in att_list if content is not None]
 
 
 def writelist2file(filepath, content, encoding='utf-8'):
-    with codecs.open(filepath, encoding=encoding) as wf:
+    with codecs.open(filepath, 'w', encoding=encoding) as wf:
         for str in content:
             if isinstance(str, list):
                 str = "\t".join(str)
@@ -42,7 +43,7 @@ def writelist2file(filepath, content, encoding='utf-8'):
 
 
 def writejson2file(filepath, json_content, encoding='utf-8'):
-    with codecs.open(filepath, encoding=encoding) as wf:
+    with codecs.open(filepath, 'w', encoding=encoding) as wf:
         for item in json_content:
             if isinstance(item, list):
                 item = [json.dumps(x, ensure_ascii=False) for x in item]

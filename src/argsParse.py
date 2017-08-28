@@ -57,7 +57,7 @@ def args_parse():
     parser = argparse.ArgumentParser()
 
     for arg_name, arg_value in DEFAULT_PARSER.items():
-        parser.add_argument(arg_value['args'], arg_value['kwargs'])
+        parser.add_argument(*arg_value['args'], **arg_value['kwargs'])
 
     return parser
 
