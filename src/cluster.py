@@ -1,14 +1,15 @@
 # coding = utf-8
 
-import time
 import logging
 from datetime import datetime
-from ioUtils import *
-from features import *
+
 import numpy as np
+from scipy.spatial.distance import cdist
 from sklearn import cluster
 from sklearn import metrics
-from scipy.spatial.distance import cdist
+
+from features import *
+from ioUtils import *
 
 
 def base_cluster(config):

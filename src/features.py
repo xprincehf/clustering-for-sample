@@ -1,8 +1,8 @@
 # coding=utf-8
 
-import jieba
 import re
 
+import jieba
 
 PATTERN_NUMBER = re.compile(r'(\d+)(\.\d*)?')
 PATTERN_DATE_1 = re.compile(r'\d{2,4}[-/\.]\d{1,2}([-/\.]\d{1,2})?')

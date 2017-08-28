@@ -1,10 +1,9 @@
 # coding=utf-8
 
-import os
 import sys
+
 import argsParse
 import cluster
-
 
 if __name__ == '__main__':
     parser = argsParse.args_parse()
