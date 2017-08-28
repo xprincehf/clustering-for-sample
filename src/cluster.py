@@ -1,6 +1,5 @@
 # coding = utf-8
 
-import logging
 from datetime import timedelta
 from datetime import datetime
 
@@ -9,6 +8,7 @@ from scipy.spatial.distance import cdist
 from sklearn import cluster
 from sklearn import metrics
 
+from log import *
 from features import *
 from ioUtils import *
 
