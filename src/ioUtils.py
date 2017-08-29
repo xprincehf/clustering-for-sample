@@ -54,7 +54,7 @@ def writejson2file(filepath, json_content, encoding='utf-8'):
             wf.write("\n")
 
 
-def write_cluster_result(filepath, origin_data, cluster_labels, format="json", order="sequence"):
+def write_cluster_result(filepath, origin_data, cluster_labels, format="json", order="label"):
     data_zip_format = zip(origin_data, cluster_labels)
     if order == "sequence":
         pass

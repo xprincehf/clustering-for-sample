@@ -49,7 +49,7 @@ def base_cluster(config):
         silhouette_score, calinski_harabaz_score = dbscan.get_estimate_result()
         logging.info("the cluster estimate is %s and %s" % (silhouette_score, calinski_harabaz_score))
         write_cluster_result(config.target+".dbscan", origin_data, dbscan.labels_)
-    elif config.cluster == "AP":
+    elif config.cluster == "AP" or config.cluster == 'ap':
         ap = APCluster(vec_data)
         logging.info("start the ap cluster")
         ap.predict()
@@ -57,14 +57,14 @@ def base_cluster(config):
         silhouette_score, calinski_harabaz_score = ap.get_estimate_result()
         logging.info("the cluster estimate is %s and %s" % (silhouette_score, calinski_harabaz_score))
         write_cluster_result(config.target+".ap", origin_data, ap.labels_)
-    elif config.cluster == "Birch":
+    elif config.cluster == "birch":
         birch = BirchCluster(vec_data)
         logging.info("start the birch cluster")
         birch.predict()
         logging.info("finish the birch cluster, use time %s" % timedelta.total_seconds(datetime.now() - start_time))
         silhouette_score, calinski_harabaz_score = birch.get_estimate_result()
         logging.info("the cluster estimate is %s and %s" % (silhouette_score, calinski_harabaz_score))
-        write_cluster_result(config.target, origin_data, birch.labels_)
+        write_cluster_result(config.target+".birch", origin_data, birch.labels_)
 
 
 class KmeansCluster:
@@ -185,10 +185,10 @@ class APCluster:
         rand_index.sort()
         self.sample_data = [self.data[value] for value in rand_index]
 
-    def predict(self, damping=0.3, preference=None):
+    def predict(self, damping=0.7, preference=None):
         X = np.array(self.data)
 
-        self.AP = cluster.AffinityPropagation(damping=damping, preference=preference)
+        self.AP = cluster.AffinityPropagation(damping=damping, preference=preference).fit(X)
         self.labels_ = [num.item() for num in self.AP.labels_]
         return self.AP
 
