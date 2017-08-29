@@ -40,14 +40,15 @@ DEFAULT_PARSER = {
             'help': 'output file path',
         }
     },
-    'number': {
-        'args': ['-n', '--number'],
+    'iter': {
+        'args': ['-i', '--iter'],
         'kwargs': {
             'action': 'store',
-            'dest': 'number',
+            'dest': 'iter',
             'type': int,
             'required': False,
-            'help': 'the number of sample',
+            'help': 'iter times',
+            'default': 0,
         }
     },
 }

@@ -1,28 +1,17 @@
 # coding = utf-8
 
-from datetime import timedelta
-from datetime import datetime
-
 import numpy as np
 from scipy.spatial.distance import cdist
 from sklearn import cluster
 from sklearn import metrics
 
-from log import *
 from features import *
-from ioUtils import *
+from log import *
 
 
-def base_cluster(config):
-
-    # load the date
-    origin_data = readfile2list(config.source)
-    attribute_values = get_json_att(origin_data, config.field)
-
-    start_time = datetime.now()
-
+def base_cluster(config, data):
     pre_process_date = []
-    for value in attribute_values:
+    for value in data:
         value = PATTERN_DATE_1.sub("", value)
         value = PATTERN_DATE_2.sub("", value)
         value = PATTERN_TIME.sub("", value)
@@ -31,51 +20,37 @@ def base_cluster(config):
     logging.info("load the cluster data")
     top_words = sentence_words_count(pre_process_date, cut=True, top_n=20)
     logging.info("get the top n words")
-    vec_data = [get_base_feature_vec(sentence, top_words) for sentence in attribute_values]
+    vec_data = [get_base_feature_vec(sentence, top_words) for sentence in data]
 
     if config.cluster == "kmeans":
         kmeans = KmeansCluster(vec_data)
         logging.info("start the kmeans cluster")
         kmeans.predict()
-        logging.info("finish the kmeans cluster, use time %s" % timedelta.total_seconds(datetime.now() - start_time))
-        silhouette_score, calinski_harabaz_score = kmeans.get_estimate_result()
-        logging.info("the cluster estimate is %s and %s" % (silhouette_score, calinski_harabaz_score))
-        write_cluster_result(config.target+".kmeans", origin_data, kmeans.labels_, order="label")
+        return kmeans
     elif config.cluster == "dbscan":
         dbscan = DbscanCluster(vec_data)
         logging.info("start the dbscan cluster")
         dbscan.predict()
-        logging.info("finish the dbscan cluster, use time %s" % timedelta.total_seconds(datetime.now() - start_time))
-        silhouette_score, calinski_harabaz_score = dbscan.get_estimate_result()
-        logging.info("the cluster estimate is %s and %s" % (silhouette_score, calinski_harabaz_score))
-        write_cluster_result(config.target+".dbscan", origin_data, dbscan.labels_)
+        return dbscan
     elif config.cluster == "AP" or config.cluster == 'ap':
         ap = APCluster(vec_data)
         logging.info("start the ap cluster")
         ap.predict()
-        logging.info("finish the ap cluster, use time %s" % timedelta.total_seconds(datetime.now() - start_time))
-        silhouette_score, calinski_harabaz_score = ap.get_estimate_result()
-        logging.info("the cluster estimate is %s and %s" % (silhouette_score, calinski_harabaz_score))
-        write_cluster_result(config.target+".ap", origin_data, ap.labels_)
+        return ap
     elif config.cluster == "birch":
         birch = BirchCluster(vec_data)
         logging.info("start the birch cluster")
         birch.predict()
-        logging.info("finish the birch cluster, use time %s" % timedelta.total_seconds(datetime.now() - start_time))
-        silhouette_score, calinski_harabaz_score = birch.get_estimate_result()
-        logging.info("the cluster estimate is %s and %s" % (silhouette_score, calinski_harabaz_score))
-        write_cluster_result(config.target+".birch", origin_data, birch.labels_)
+        return birch
 
 
 class KmeansCluster:
-
     def __init__(self, data, sample_rate=0.3):
         self.data = data
         self.length = len(data)
         self.sample_rate = sample_rate
         self.sample_num = int(self.length * sample_rate)
         self._get_random_sample()
-
 
     def _get_random_sample(self):
         rand_index = np.random.choice(self.length, self.sample_num, replace=False)
@@ -103,10 +78,10 @@ class KmeansCluster:
         X = np.array(self.sample_data)
 
         kmeans = cluster.KMeans(n_clusters=1, random_state=0, n_jobs=5).fit(X)
-        silhouette_score = metrics.silhouette_score(X, kmeans.labels_,metric='euclidean')
+        silhouette_score = metrics.silhouette_score(X, kmeans.labels_, metric='euclidean')
         for k in xrange(2, 20):
             kmeans = cluster.KMeans(n_clusters=k, random_state=0, n_jobs=5).fit(X)
-            cur_silhouette_score = metrics.silhouette_score(X, kmeans.labels_,metric='euclidean')
+            cur_silhouette_score = metrics.silhouette_score(X, kmeans.labels_, metric='euclidean')
             logging.info("%s clusters meandistortion is %s" % (k, cur_silhouette_score))
             if (silhouette_score - cur_silhouette_score) / silhouette_score < 0.1:
                 k -= 1
@@ -134,8 +109,8 @@ class KmeansCluster:
 
         silhouette_score = metrics.silhouette_score(np.array(self.data), self.kmeans.labels_)
         calinski_harabaz_score = metrics.calinski_harabaz_score(np.array(self.data), self.kmeans.labels_)
-        
-        return silhouette_score, calinski_harabaz_score
+
+        return round(silhouette_score, 4), round(calinski_harabaz_score, 4)
 
 
 class DbscanCluster:
@@ -145,7 +120,6 @@ class DbscanCluster:
         self.sample_rate = sample_rate
         self.sample_num = int(self.length * sample_rate)
         self._get_random_sample()
-
 
     def _get_random_sample(self):
         rand_index = np.random.choice(self.length, self.sample_num, replace=False)
@@ -168,7 +142,7 @@ class DbscanCluster:
         silhouette_score = metrics.silhouette_score(np.array(self.data), self.dbscan.labels_)
         calinski_harabaz_score = metrics.calinski_harabaz_score(np.array(self.data), self.dbscan.labels_)
 
-        return silhouette_score, calinski_harabaz_score
+        return round(silhouette_score, 4), round(calinski_harabaz_score, 4)
 
 
 class APCluster:
@@ -200,7 +174,7 @@ class APCluster:
         silhouette_score = metrics.silhouette_score(np.array(self.data), self.AP.labels_)
         calinski_harabaz_score = metrics.calinski_harabaz_score(np.array(self.data), self.AP.labels_)
 
-        return silhouette_score, calinski_harabaz_score
+        return round(silhouette_score, 4), round(calinski_harabaz_score, 4)
 
 
 class BirchCluster:
@@ -233,4 +207,4 @@ class BirchCluster:
         silhouette_score = metrics.silhouette_score(np.array(self.data), self.birch.labels_)
         calinski_harabaz_score = metrics.calinski_harabaz_score(np.array(self.data), self.birch.labels_)
 
-        return silhouette_score, calinski_harabaz_score
+        return round(silhouette_score, 4), round(calinski_harabaz_score, 4)

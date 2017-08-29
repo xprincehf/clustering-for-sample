@@ -35,10 +35,10 @@ def get_json_att(content, attribute):
 
 def writelist2file(filepath, content, encoding='utf-8'):
     with codecs.open(filepath, 'w', encoding=encoding) as wf:
-        for str in content:
-            if isinstance(str, list):
-                str = "\t".join(str)
-            wf.write(str)
+        for item in content:
+            if isinstance(item, list):
+                item = "\t".join([str(x) for x in item])
+            wf.write(item)
             wf.write("\n")
 
 
@@ -65,5 +65,3 @@ def write_cluster_result(filepath, origin_data, cluster_labels, format="json", o
         writejson2file(filepath, data_zip_format)
     elif format == "text":
         writelist2file(filepath, data_zip_format)
-
-
