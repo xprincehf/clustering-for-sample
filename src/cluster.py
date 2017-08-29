@@ -70,6 +70,9 @@ class KmeansCluster:
             if (mean_distortion - cur_mean_distortion) / mean_distortion < 0.1:
                 k -= 1
                 break
+            elif cur_mean_distortion < 0.0001:
+                break
+
             mean_distortion = cur_mean_distortion
 
         return k
@@ -77,14 +80,16 @@ class KmeansCluster:
     def get_best_cluster_num_silhouette(self):
         X = np.array(self.sample_data)
 
-        kmeans = cluster.KMeans(n_clusters=1, random_state=0, n_jobs=5).fit(X)
+        kmeans = cluster.KMeans(n_clusters=1, random_state=0, n_jobs=-1).fit(X)
         silhouette_score = metrics.silhouette_score(X, kmeans.labels_, metric='euclidean')
         for k in xrange(2, 20):
-            kmeans = cluster.KMeans(n_clusters=k, random_state=0, n_jobs=5).fit(X)
+            kmeans = cluster.KMeans(n_clusters=k, random_state=0, n_jobs=-1).fit(X)
             cur_silhouette_score = metrics.silhouette_score(X, kmeans.labels_, metric='euclidean')
             logging.info("%s clusters meandistortion is %s" % (k, cur_silhouette_score))
             if (silhouette_score - cur_silhouette_score) / silhouette_score < 0.1:
                 k -= 1
+                break
+            elif mean_distortion < 0.0001:
                 break
             silhouette_score = cur_silhouette_score
 
@@ -98,7 +103,7 @@ class KmeansCluster:
         logging.info("the best cluster of kmeans is %s" % k)
         X = np.array(self.data)
 
-        self.kmeans = cluster.KMeans(n_clusters=k, random_state=0, n_jobs=5).fit(X)
+        self.kmeans = cluster.KMeans(n_clusters=k, random_state=0, n_jobs=-1).fit(X)
         self.labels_ = [num.item() for num in self.kmeans.labels_]
         return self.kmeans
 
