@@ -5,6 +5,10 @@ import json
 import os
 
 
+def check_exist(filepath):
+    if not os.path.exists(filepath):
+        os.makedirs(filepath)
+
 def readfile2list(filepath, encoding="utf-8"):
     with codecs.open(filepath, 'r', encoding=encoding) as rf:
         return rf.readlines()
@@ -34,6 +38,7 @@ def get_json_att(content, attribute):
 
 
 def writelist2file(filepath, content, encoding='utf-8'):
+    check_exist(filepath)
     with codecs.open(filepath, 'w', encoding=encoding) as wf:
         for item in content:
             if isinstance(item, list):
@@ -43,6 +48,7 @@ def writelist2file(filepath, content, encoding='utf-8'):
 
 
 def writejson2file(filepath, json_content, encoding='utf-8'):
+    check_exist(filepath)
     with codecs.open(filepath, 'w', encoding=encoding) as wf:
         for item in json_content:
             if isinstance(item, list) or isinstance(item, tuple):
